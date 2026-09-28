@@ -14,12 +14,14 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // CORS setup supporting credentials (cookies & authorization headers)
+const configuredOrigin = (process.env.CORS_ORIGIN || '').replace(/\/+$/, '');
 const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:5000',
+  configuredOrigin,
+  'http://localhost:5000',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5000'
-];
+].filter(Boolean);
 
 app.use(
   cors({
@@ -43,6 +45,22 @@ app.use(cookieParser());
 
 // Serve static frontend assets
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Connect to DB if not yet connected (essential for serverless platforms like Vercel)
+const connectDB = require('./config/db');
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('API DB Connection error:', err.message);
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please ensure MongoDB Atlas IP whitelist (0.0.0.0/0) is configured.',
+      error: err.message
+    });
+  }
+});
 
 // Mount API routes
 app.use('/api', apiRoutes);
