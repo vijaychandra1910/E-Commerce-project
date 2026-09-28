@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumen • Premium Tech & E-Commerce REST Platform</title>
+  <meta name="description" content="Secure REST API and modern frontend for e-commerce with full JWT authentication, request validation, and Product CRUD operations.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        </div>
+        <span>LUMEN</span>
+        <span class="brand-tag">REST API &bull; JWT</span>
+      </div>
+
+      <!-- Action items & Auth State -->
+      <div class="nav-actions">
+        <!-- Guest View -->
+        <div id="guest-nav" class="nav-actions" style="display: flex;">
+          <button id="btn-sign-in" class="btn btn-secondary btn-sm">Sign In</button>
+          <button id="btn-register" class="btn btn-primary btn-sm">Register</button>
+        </div>
+
+        <!-- Authenticated View -->
+        <div id="user-nav" class="nav-actions" style="display: none;">
+          <div class="user-badge">
+            <div id="nav-user-avatar" class="user-avatar">U</div>
+            <div>
+              <div id="nav-user-name" class="user-name">User</div>
+            </div>
+            <span id="nav-user-role" class="user-role">USER</span>
+          </div>
+          <button id="btn-logout" class="btn btn-secondary btn-sm" title="Log Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Logout
+          </button>
+        </div>
+
+        <!-- Add Product CTA Button -->
+        <button id="btn-add-product" class="btn btn-primary btn-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Product
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Wrapper -->
+  <main class="app-container">
+    <!-- Hero / Metrics Banner -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1>Engineered for <span>Performance</span></h1>
+          <p>Production-grade RESTful API featuring bcrypt hashing, dual-token JWT security with httpOnly refresh cookies, field-level request validation, and full product lifecycle management.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div id="stat-total-products" class="stat-val">--</div>
+            <div class="stat-label">Products</div>
+          </div>
+          <div class="stat-item">
+            <div id="stat-instock" class="stat-val">--</div>
+            <div class="stat-label">In Stock</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-val">256-bit</div>
+            <div class="stat-label">JWT Security</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search & Filter Controls -->
+    <section class="controls-bar">
+      <div class="controls-row-top">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Search by title, specs, or keyword...">
+        </div>
+        <div class="filter-actions">
+          <select id="sort-select" class="select-custom">
+            <option value="newest">Sort: Newest First</option>
+            <option value="price-asc">Sort: Price Low to High</option>
+            <option value="price-desc">Sort: Price High to Low</option>
+            <option value="rating-desc">Sort: Top Rated</option>
+            <option value="oldest">Sort: Oldest First</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="Products.resetFilters()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-pills">
+        <button class="category-pill active" data-category="All">All Categories</button>
+        <button class="category-pill" data-category="Audio">Audio</button>
+        <button class="category-pill" data-category="Wearables">Wearables</button>
+        <button class="category-pill" data-category="Computers">Computers</button>
+        <button class="category-pill" data-category="Cameras">Cameras</button>
+        <button class="category-pill" data-category="Accessories">Accessories</button>
+      </div>
+    </section>
+
+    <!-- Product Grid -->
+    <section id="products-grid" class="product-grid">
+      <!-- Populated via JavaScript -->
+    </section>
+  </main>
+
+  <!-- AUTHENTICATION MODAL (LOGIN & REGISTER) -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Account Access</h3>
+        <button class="modal-close" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs">
+          <button id="tab-btn-login" class="modal-tab active">Sign In</button>
+          <button id="tab-btn-register" class="modal-tab">Register</button>
+        </div>
+
+        <!-- Quick Demo Credentials Box -->
+        <div class="demo-bar">
+          <span class="demo-bar-text">Testing demo credentials?</span>
+          <div style="display: flex; gap: 0.4rem;">
+            <button id="btn-fill-demo" type="button" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">User Demo</button>
+            <button id="btn-fill-admin" type="button" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">Admin Demo</button>
+          </div>
+        </div>
+
+        <!-- SIGN IN FORM -->
+        <form id="login-form">
+          <div class="field-error" id="login-general-error" style="margin-bottom: 0.8rem;"></div>
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required autocomplete="email">
+            <span class="field-error" id="login-email-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <span class="field-error" id="login-password-error"></span>
+          </div>
+          <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            Sign In
+          </button>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="register-form" style="display: none;">
+          <div class="field-error" id="reg-general-error" style="margin-bottom: 0.8rem;"></div>
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" class="form-control" placeholder="e.g. John Doe" required autocomplete="name">
+            <span class="field-error" id="reg-name-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Email Address</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="name@example.com" required autocomplete="email">
+            <span class="field-error" id="reg-email-error"></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="reg-password">Password</label>
+              <input type="password" id="reg-password" class="form-control" placeholder="Min 8 chars, 1 num, 1 sym" required autocomplete="new-password">
+              <span class="field-error" id="reg-password-error"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="reg-confirm-password">Confirm Password</label>
+              <input type="password" id="reg-confirm-password" class="form-control" placeholder="Repeat password" required autocomplete="new-password">
+              <span class="field-error" id="reg-confirm-password-error"></span>
+            </div>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 1rem;">
+            Password requires at least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special symbol (!@#$%^&*).
+          </p>
+          <button type="submit" id="btn-submit-register" class="btn btn-primary" style="width: 100%;">
+            Create Account
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT CREATE / EDIT MODAL -->
+  <div id="product-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="product-modal-title" class="modal-title">Add New Product</h3>
+        <button class="modal-close" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <form id="product-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="prod-title">Product Title</label>
+            <input type="text" id="prod-title" class="form-control" placeholder="e.g. Sony WH-1000XM5 Wireless Headphones" required>
+            <span class="field-error" id="prod-title-error"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="prod-category">Category</label>
+              <select id="prod-category" class="form-control" required>
+                <option value="Audio">Audio</option>
+                <option value="Wearables">Wearables</option>
+                <option value="Computers">Computers</option>
+                <option value="Cameras">Cameras</option>
+                <option value="Accessories">Accessories</option>
+              </select>
+              <span class="field-error" id="prod-category-error"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="prod-rating">Rating (0 - 5)</label>
+              <input type="number" id="prod-rating" class="form-control" placeholder="4.8" step="0.1" min="0" max="5" value="4.5">
+              <span class="field-error" id="prod-rating-error"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="prod-price">Price (USD $)</label>
+              <input type="number" id="prod-price" class="form-control" placeholder="299.99" step="0.01" min="0.01" required>
+              <span class="field-error" id="prod-price-error"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="prod-stock">Stock Units</label>
+              <input type="number" id="prod-stock" class="form-control" placeholder="25" min="0" step="1" required>
+              <span class="field-error" id="prod-stock-error"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prod-image">Image URL</label>
+            <input type="url" id="prod-image" class="form-control" placeholder="https://images.unsplash.com/photo-...">
+            <span class="field-error" id="prod-image-error"></span>
+            <div id="image-preview" class="image-preview-container">
+              <span class="image-preview-placeholder">Live preview will appear here</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prod-desc">Description</label>
+            <textarea id="prod-desc" class="form-control" rows="3" placeholder="Provide detailed technical features, warranty, and specs..." required></textarea>
+            <span class="field-error" id="prod-desc-error"></span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+          <button type="submit" id="product-submit-btn" class="btn btn-primary">Create Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PRODUCT DETAIL MODAL -->
+  <div id="product-detail-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Product Details</h3>
+        <button class="modal-close" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="product-detail-content" class="modal-body">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="delete-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Deletion</h3>
+        <button class="modal-close" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+          Are you sure you want to permanently delete <strong id="delete-product-title" style="color: #fff;">this product</strong>? This action cannot be reversed.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">Delete Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/products.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
